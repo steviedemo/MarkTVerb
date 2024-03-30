@@ -8,9 +8,11 @@ ExternalEEPROM myMem;
 
 #include <AceButton.h>
 using namespace ace_button;
-
-const int BUTTON_PIN = 2;
+const int red_led = 8;
+const int green_led = 10;
+const int BUTTON_PIN = 7;
 AceButton button(BUTTON_PIN);
+bool busy(false);
 
 void handleEvent(AceButton*, uint8_t, uint8_t);
 
@@ -61,6 +63,11 @@ void setup() {
   Serial.begin(115200);
 
   pinMode (BUTTON_PIN, INPUT_PULLUP); // push button on pin 2
+  pinMode(green_led, OUTPUT);
+  pinMode(red_led, OUTPUT);
+  digitalWrite(green_led, LOW);
+  digitalWrite(red_led, LOW);
+  
   
   // Get the current config.
   ButtonConfig* config = button.getButtonConfig();
@@ -74,8 +81,18 @@ void setup() {
   if (myMem.begin() == false)
   {
     Serial.println("No memory detected. Freezing.");
-    while (1);
+    while (1){
+      digitalWrite(red_led, HIGH);
+      delay(250);
+      digitalWrite(red_led, LOW);
+      delay(250);
+    }
+  } else {
+    digitalWrite(green_led, HIGH);
+    delay(1000);
+    digitalWrite(green_led, LOW);
   }
+  
 
   Serial.println("Memory detected!");
   
@@ -94,49 +111,46 @@ void setup() {
 bool done = false;
 
 void loop() {
-  if (done) {
-    // blink when dump writen
-    digitalWrite(LED_BUILTIN, HIGH); 
-    delay(500);
-    digitalWrite(LED_BUILTIN, LOW); 
-    delay(500); 
-  } else {
-    button.check();
-  }
+  
+  button.check();
 }
 
+void writeMemory(){
+    Serial.println("Starting write");
+    writepreset(0, preset0, PRESETLEN);
+    writepreset(1, preset1, PRESETLEN);
+    writepreset(2, preset2, PRESETLEN);
+    writepreset(3, preset3, PRESETLEN);
+    writepreset(4, preset4, PRESETLEN);
+    writepreset(5, preset5, PRESETLEN);
+    writepreset(6, preset6, PRESETLEN);
+    writepreset(7, preset7, PRESETLEN);
+    Serial.println("Write Complete!");
+}
+
+void readMemory(){
+    Serial.println("Start read");
+      
+    readpreset(1);
+    readpreset(2);
+    readpreset(3);
+    readpreset(4);
+    readpreset(5);
+    readpreset(6);
+    readpreset(7);
+      
+    //done = true;
+    Serial.println("Read Complete!");
+}
 void handleEvent(AceButton* /*button*/, uint8_t eventType,
     uint8_t /*buttonState*/) {
     switch (eventType) {
       case AceButton::kEventClicked:
-          Serial.println("Start read");
-            
-          readpreset(1);
-          readpreset(2);
-          readpreset(3);
-          readpreset(4);
-          readpreset(5);
-          readpreset(6);
-          readpreset(7);
-            
-          done = true;
-          Serial.println("Done, reset the board to start again");
+          readMemory();
           break;
       case AceButton::kEventLongPressed:
-          Serial.println("Start write");
-          
-          writepreset(0, preset0, PRESETLEN);
-          writepreset(1, preset1, PRESETLEN);
-          writepreset(2, preset2, PRESETLEN);
-          writepreset(3, preset3, PRESETLEN);
-          writepreset(4, preset4, PRESETLEN);
-          writepreset(5, preset5, PRESETLEN);
-          writepreset(6, preset6, PRESETLEN);
-          writepreset(7, preset7, PRESETLEN);
-          
-          done = true;
-          Serial.println("Done, reset the board to start again");
+          writeMemory();
+          //Serial.println("Done, reset the board to start again");
           break;
     }
 }
-    
